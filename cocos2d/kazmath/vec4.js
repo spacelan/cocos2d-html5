@@ -33,6 +33,10 @@ cc.kmVec4 = function (x, y, z, w) {
     this.w = w || 0;
 };
 
+cc.kmVec3SIMD = function (x, y, z, w) {
+    this.data = new Float32Array([x, y, z, w]);
+};
+
 
 cc.kmVec4Fill = function(outVec, x, y ,z, w){
     outVec.x = x;

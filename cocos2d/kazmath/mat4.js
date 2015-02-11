@@ -181,6 +181,132 @@ cc.kmMat4Inverse = function (pOut, pM) {
     return pOut;
 };
 
+cc.kmMat4InverseSIMD = function (pOut, pM) {
+    var src = pM.mat;
+    var dest = pOut.mat;
+    var src0, src1, src2, src3;
+    var row0, row1, row2, row3;
+    var tmp1;
+    var minor0, minor1, minor2, minor3;
+    var det;
+
+    // Load the 4 rows
+    var src0 = SIMD.float32x4.load(src, 0);
+    var src1 = SIMD.float32x4.load(src, 4);
+    var src2 = SIMD.float32x4.load(src, 8);
+    var src3 = SIMD.float32x4.load(src, 12);
+
+    // Transpose the source matrix.  Sort of.  Not a true transpose operation
+
+    tmp1 = SIMD.float32x4.shuffle(src0, src1, 0, 1, 4, 5);
+    row1 = SIMD.float32x4.shuffle(src2, src3, 0, 1, 4, 5);
+    row0 = SIMD.float32x4.shuffle(tmp1, row1, 0, 2, 4, 6);
+    row1 = SIMD.float32x4.shuffle(row1, tmp1, 1, 3, 5, 7);
+
+    tmp1 = SIMD.float32x4.shuffle(src0, src1, 2, 3, 6, 7);
+    row3 = SIMD.float32x4.shuffle(src2, src3, 2, 3, 6, 7);
+    row2 = SIMD.float32x4.shuffle(tmp1, row3, 0, 2, 4, 6);
+    row3 = SIMD.float32x4.shuffle(row3, tmp1, 1, 3, 5, 7);
+
+    // This is a true transposition, but it will lead to an incorrect result
+
+    //tmp1 = SIMD.float32x4.shuffle(src0, src1, 0, 1, 4, 5);
+    //tmp2 = SIMD.float32x4.shuffle(src2, src3, 0, 1, 4, 5);
+    //row0  = SIMD.float32x4.shuffle(tmp1, tmp2, 0, 2, 4, 6);
+    //row1  = SIMD.float32x4.shuffle(tmp1, tmp2, 1, 3, 5, 7);
+
+    //tmp1 = SIMD.float32x4.shuffle(src0, src1, 2, 3, 6, 7);
+    //tmp2 = SIMD.float32x4.shuffle(src2, src3, 2, 3, 6, 7);
+    //row2  = SIMD.float32x4.shuffle(tmp1, tmp2, 0, 2, 4, 6);
+    //row3  = SIMD.float32x4.shuffle(tmp1, tmp2, 1, 3, 5, 7);
+
+    // ----
+    tmp1   = SIMD.float32x4.mul(row2, row3);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 1, 0, 3, 2); // 0xB1 = 10110001
+    minor0 = SIMD.float32x4.mul(row1, tmp1);
+    minor1 = SIMD.float32x4.mul(row0, tmp1);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 2, 3, 0, 1); // 0x4E = 01001110
+    minor0 = SIMD.float32x4.sub(SIMD.float32x4.mul(row1, tmp1), minor0);
+    minor1 = SIMD.float32x4.sub(SIMD.float32x4.mul(row0, tmp1), minor1);
+    minor1 = SIMD.float32x4.swizzle(minor1, 2, 3, 0, 1); // 0x4E = 01001110
+
+    // ----
+    tmp1   = SIMD.float32x4.mul(row1, row2);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 1, 0, 3, 2); // 0xB1 = 10110001
+    minor0 = SIMD.float32x4.add(SIMD.float32x4.mul(row3, tmp1), minor0);
+    minor3 = SIMD.float32x4.mul(row0, tmp1);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 2, 3, 0, 1); // 0x4E = 01001110
+    minor0 = SIMD.float32x4.sub(minor0, SIMD.float32x4.mul(row3, tmp1));
+    minor3 = SIMD.float32x4.sub(SIMD.float32x4.mul(row0, tmp1), minor3);
+    minor3 = SIMD.float32x4.swizzle(minor3, 2, 3, 0, 1); // 0x4E = 01001110
+
+    // ----
+    tmp1   = SIMD.float32x4.mul(SIMD.float32x4.swizzle(row1, 2, 3, 0, 1), row3); // 0x4E = 01001110
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 1, 0, 3, 2); // 0xB1 = 10110001
+    row2   = SIMD.float32x4.swizzle(row2, 2, 3, 0, 1);  // 0x4E = 01001110
+    minor0 = SIMD.float32x4.add(SIMD.float32x4.mul(row2, tmp1), minor0);
+    minor2 = SIMD.float32x4.mul(row0, tmp1);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 2, 3, 0, 1); // 0x4E = 01001110
+    minor0 = SIMD.float32x4.sub(minor0, SIMD.float32x4.mul(row2, tmp1));
+    minor2 = SIMD.float32x4.sub(SIMD.float32x4.mul(row0, tmp1), minor2);
+    minor2 = SIMD.float32x4.swizzle(minor2, 2, 3, 0, 1); // 0x4E = 01001110
+
+    // ----
+    tmp1   = SIMD.float32x4.mul(row0, row1);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 1, 0, 3, 2); // 0xB1 = 10110001
+    minor2 = SIMD.float32x4.add(SIMD.float32x4.mul(row3, tmp1), minor2);
+    minor3 = SIMD.float32x4.sub(SIMD.float32x4.mul(row2, tmp1), minor3);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 2, 3, 0, 1); // 0x4E = 01001110
+    minor2 = SIMD.float32x4.sub(SIMD.float32x4.mul(row3, tmp1), minor2);
+    minor3 = SIMD.float32x4.sub(minor3, SIMD.float32x4.mul(row2, tmp1));
+
+    // ----
+    tmp1   = SIMD.float32x4.mul(row0, row3);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 1, 0, 3, 2); // 0xB1 = 10110001
+    minor1 = SIMD.float32x4.sub(minor1, SIMD.float32x4.mul(row2, tmp1));
+    minor2 = SIMD.float32x4.add(SIMD.float32x4.mul(row1, tmp1), minor2);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 2, 3, 0, 1); // 0x4E = 01001110
+    minor1 = SIMD.float32x4.add(SIMD.float32x4.mul(row2, tmp1), minor1);
+    minor2 = SIMD.float32x4.sub(minor2, SIMD.float32x4.mul(row1, tmp1));
+
+    // ----
+    tmp1   = SIMD.float32x4.mul(row0, row2);
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 1, 0, 3, 2); // 0xB1 = 10110001
+    minor1 = SIMD.float32x4.add(SIMD.float32x4.mul(row3, tmp1), minor1);
+    minor3 = SIMD.float32x4.sub(minor3, SIMD.float32x4.mul(row1, tmp1));
+    tmp1   = SIMD.float32x4.swizzle(tmp1, 2, 3, 0, 1); // 0x4E = 01001110
+    minor1 = SIMD.float32x4.sub(minor1, SIMD.float32x4.mul(row3, tmp1));
+    minor3 = SIMD.float32x4.add(SIMD.float32x4.mul(row1, tmp1), minor3);
+
+    // Compute determinant
+    det   = SIMD.float32x4.mul(row0, minor0);
+    det   = SIMD.float32x4.add(SIMD.float32x4.swizzle(det, 2, 3, 0, 1), det); // 0x4E = 01001110
+    det   = SIMD.float32x4.add(SIMD.float32x4.swizzle(det, 1, 0, 3, 2), det); // 0xB1 = 10110001
+    tmp1  = SIMD.float32x4.reciprocal(det);
+    det   = SIMD.float32x4.sub(SIMD.float32x4.add(tmp1, tmp1), SIMD.float32x4.mul(det, SIMD.float32x4.mul(tmp1, tmp1)));
+    det   = SIMD.float32x4.swizzle(det, 0, 0, 0, 0);
+
+    // These shuffles aren't necessary if the faulty transposition is done
+    // up at the top of this function.
+    //minor0 = SIMD.float32x4.swizzle(minor0, 2, 1, 0, 3);
+    //minor1 = SIMD.float32x4.swizzle(minor1, 2, 1, 0, 3);
+    //minor2 = SIMD.float32x4.swizzle(minor2, 2, 1, 0, 3);
+    //minor3 = SIMD.float32x4.swizzle(minor3, 2, 1, 0, 3);
+
+    // Compute final values by multiplying with 1/det
+    minor0 = SIMD.float32x4.mul(det, minor0);
+    minor1 = SIMD.float32x4.mul(det, minor1);
+    minor2 = SIMD.float32x4.mul(det, minor2);
+    minor3 = SIMD.float32x4.mul(det, minor3);
+
+    SIMD.float32x4.store(dest, 0, minor0);
+    SIMD.float32x4.store(dest, 4, minor1);
+    SIMD.float32x4.store(dest, 8, minor2);
+    SIMD.float32x4.store(dest, 12, minor3);
+
+    return pOut;
+};
+
 /**
  * Returns KM_TRUE if pIn is an identity matrix
  * KM_FALSE otherwise
@@ -190,6 +316,33 @@ cc.kmMat4IsIdentity = function (pIn) {
         if (cc.kmMat4._identity[i] != pIn.mat[i])
             return false;
     }
+    return true;
+};
+
+cc.kmMat4IsIdentitySIMD = function (pIn) {
+    var inx4 = SIMD.float32x4.load(pIn.mat, 0);
+    var identityx4 = SIMD.float32x4.load(cc.kmMat4._identity, 0);
+    var ret = SIMD.float32x4.equal(inx4, identityx4);
+    if(ret.signMask === 0x00)
+        return false;
+        
+    inx4 = SIMD.float32x4.load(pIn.mat, 4);
+    identityx4 = SIMD.float32x4.load(cc.kmMat4._identity, 4);
+    ret = SIMD.float32x4.equal(inx4, identityx4);
+    if(ret.signMask === 0x00)
+        return false;
+    
+    inx4 = SIMD.float32x4.load(pIn.mat, 8);
+    identityx4 = SIMD.float32x4.load(cc.kmMat4._identity, 8);
+    ret = SIMD.float32x4.equal(inx4, identityx4);
+    if(ret.signMask === 0x00)
+        return false;
+    
+    inx4 = SIMD.float32x4.load(pIn.mat, 12);
+    identityx4 = SIMD.float32x4.load(cc.kmMat4._identity, 12);
+    ret = SIMD.float32x4.equal(inx4, identityx4);
+    if(ret.signMask === 0x00)
+        return false;
     return true;
 };
 
@@ -204,6 +357,36 @@ cc.kmMat4Transpose = function (pOut, pIn) {
     }
     return pOut;
 };
+
+cc.kmMat4TransposeSIMD = function (pOut, pIn) {
+    var outArr = pOut.mat, inArr = pIn.mat;
+    var src0     = SIMD.float32x4.load(inArr, 0);
+    var src1     = SIMD.float32x4.load(inArr, 4);
+    var src2     = SIMD.float32x4.load(inArr, 8);
+    var src3     = SIMD.float32x4.load(inArr, 12);
+    var dst0;
+    var dst1;
+    var dst2;
+    var dst3;
+    var tmp01;
+    var tmp23;
+
+    tmp01 = SIMD.float32x4.shuffle(src0, src1, 0, 1, 4, 5);
+    tmp23 = SIMD.float32x4.shuffle(src2, src3, 0, 1, 4, 5);
+    dst0  = SIMD.float32x4.shuffle(tmp01, tmp23, 0, 2, 4, 6);
+    dst1  = SIMD.float32x4.shuffle(tmp01, tmp23, 1, 3, 5, 7);
+
+    tmp01 = SIMD.float32x4.shuffle(src0, src1, 2, 3, 6, 7);
+    tmp23 = SIMD.float32x4.shuffle(src2, src3, 2, 3, 6, 7);
+    dst2  = SIMD.float32x4.shuffle(tmp01, tmp23, 0, 2, 4, 6);
+    dst3  = SIMD.float32x4.shuffle(tmp01, tmp23, 1, 3, 5, 7);
+
+    SIMD.float32x4.store(outArr, 0, dst0);
+    SIMD.float32x4.store(outArr, 4, dst1);
+    SIMD.float32x4.store(outArr, 8, dst2);
+    SIMD.float32x4.store(outArr, 12, dst3);
+    return pOut;
+}
 
 /**
  * Multiplies pM1 with pM2, stores the result in pOut, returns pOut
@@ -237,6 +420,55 @@ cc.kmMat4Multiply = function (pOut, pM1, pM2) {
     outArray[13] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31;
     outArray[14] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32;
     outArray[15] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33;
+    return pOut;
+};
+
+cc.kmMat4MultiplySIMD = function (pOut, pM1, pM2) {
+    var a = pM1.mat;
+    var b = pM2.mat;
+    var out = pOut.mat;
+        
+    var a0 = SIMD.float32x4.load(a,0);
+    var a1 = SIMD.float32x4.load(a,4);
+    var a2 = SIMD.float32x4.load(a,8);
+    var a3 = SIMD.float32x4.load(a,12);
+    var b0 = SIMD.float32x4.load(b, 0);
+    SIMD.float32x4.store(out, 0, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b0, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                 SIMD.float32x4.mul(SIMD.float32x4.swizzle(b0, 1, 1, 1, 1), a1),
+                 SIMD.float32x4.add(
+                      SIMD.float32x4.mul(SIMD.float32x4.swizzle(b0, 2, 2, 2, 2), a2),
+                      SIMD.float32x4.mul(SIMD.float32x4.swizzle(b0, 3, 3, 3, 3), a3)))));
+    var b1 = SIMD.float32x4.load(b, 4);
+    SIMD.float32x4.store(out, 4, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b1, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                SIMD.float32x4.mul(SIMD.float32x4.swizzle(b1, 1, 1, 1, 1), a1),
+                SIMD.float32x4.add(
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b1, 2, 2, 2, 2), a2),
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b1, 3, 3, 3, 3), a3)))));
+    var b2 = SIMD.float32x4.load(b, 8);
+    SIMD.float32x4.store(out, 8, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b2, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                SIMD.float32x4.mul(SIMD.float32x4.swizzle(b2, 1, 1, 1, 1), a1),
+                SIMD.float32x4.add(
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b2, 2, 2, 2, 2), a2),
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b2, 3, 3, 3, 3), a3)))));
+    var b3 = SIMD.float32x4.load(b, 12);
+    SIMD.float32x4.store(out, 12, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b3, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 1, 1, 1, 1), a1),
+                SIMD.float32x4.add(
+                    SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 2, 2, 2, 2), a2),
+                    SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 3, 3, 3, 3), a3)))));
+
     return pOut;
 };
 
@@ -328,6 +560,23 @@ cc.kmMat4Assign = function (pOut, pIn) {
     return pOut;
 };
 
+cc.kmMat4AssignSIMD = function (pOut, pIn) {
+    if(pOut == pIn) {
+        cc.log("cc.kmMat4Assign(): pOut equals pIn");
+        return pOut;
+    }
+
+    var outArr = pOut.mat;
+    var inArr = pIn.mat;
+    
+    SIMD.float32x4.store(outArr, 0, SIMD.float32x4.load(inArr, 0));
+    SIMD.float32x4.store(outArr, 4, SIMD.float32x4.load(inArr, 4));
+    SIMD.float32x4.store(outArr, 8, SIMD.float32x4.load(inArr, 8));
+    SIMD.float32x4.store(outArr, 12, SIMD.float32x4.load(inArr, 12));
+    
+    return pOut;
+}
+
 /**
  * Returns KM_TRUE if the 2 matrices are equal (approximately)
  */
@@ -345,6 +594,41 @@ cc.kmMat4AreEqual = function (pMat1, pMat2) {
     }
     return true;
 };
+
+cc.kmMat4AreEqualSIMD = function (pMat1, pMat2) {
+    if(pMat1 == pMat2){
+        cc.log("cc.kmMat4AreEqual(): pMat1 and pMat2 are same object.");
+        return true;
+    }
+
+    var m10 = SIMD.float32x4.load(pMat1.mat, 0);
+    var m20 = SIMD.float32x4.load(pMat2.mat, 0);
+    
+    var epsilon = SIMD.float32x4.splat(cc.kmEpsilon);
+    
+    var ret = SIMD.float32x4.lessThanOrEqual(SIMD.float32x4.abs(SIMD.float32x4.sub(m10, m20)), epsilon);
+    if (ret.signMask === 0)
+        return false;
+        
+    var m11 = SIMD.float32x4.load(pMat1.mat, 4);
+    var m21 = SIMD.float32x4.load(pMat2.mat, 4);
+    ret = SIMD.float32x4.lessThanOrEqual(SIMD.float32x4.abs(SIMD.float32x4.sub(m11, m21)), epsilon);
+    if (ret.signMask === 0)
+        return false;
+    
+    var m12 = SIMD.float32x4.load(pMat1.mat, 8);
+    var m22 = SIMD.float32x4.load(pMat2.mat, 8);
+    ret = SIMD.float32x4.lessThanOrEqual(SIMD.float32x4.abs(SIMD.float32x4.sub(m12, m22)), epsilon);
+    if (ret.signMask === 0)
+        return false;
+    
+    var m13 = SIMD.float32x4.load(pMat1.mat, 12);
+    var m23 = SIMD.float32x4.load(pMat2.mat, 12);
+    ret = SIMD.float32x4.lessThanOrEqual(SIMD.float32x4.abs(SIMD.float32x4.sub(m13, m23)), epsilon);
+    if (ret.signMask === 0)
+        return false;
+    return true;
+}
 
 /**
  * Builds an X-axis rotation matrix and stores it in pOut, returns pOut
@@ -681,6 +965,107 @@ cc.kmMat4LookAt = function (pOut, pEye, pCenter, pUp) {
 
     return pOut;
 };
+
+cc.kmMat4LookAtSIMD = function (pOut, pEye, pCenter, pUp) {
+    var out = pOut.mat;
+
+    var center = SIMD.float32x4.load(pCenter.data, 0);
+    var eye = SIMD.float32x4.load(pEye.data, 0);
+    var up = SIMD.float32x4.load(pUp.data, 0);
+
+    // cc.kmVec3Subtract(f, pCenter, pEye);
+    var f = SIMD.float32x4.sub(center, eye);
+    // cc.kmVec3Normalize(f, f);    
+    var tmp = SIMD.float32x4.mul(f, f);
+    tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
+    f = SIMD.float32x4.mul(f, SIMD.float32x4.reciprocalSqrt(tmp));
+
+    // cc.kmVec3Assign(up, pUp);
+    // cc.kmVec3Normalize(up, up);
+    tmp = SIMD.float32x4.mul(up, up);
+    tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
+    up = SIMD.float32x4.mul(up, SIMD.float32x4.reciprocalSqrt(tmp));
+
+    // cc.kmVec3Cross(s, f, up);
+    var s = SIMD.float32x4.sub(SIMD.float32x4.mul(SIMD.float32x4.swizzle(f, 1, 2, 0, 3), SIMD.float32x4.swizzle(up, 2, 0, 1, 3)),
+                               SIMD.float32x4.mul(SIMD.float32x4.swizzle(f, 2, 0, 1, 3), SIMD.float32x4.swizzle(up, 1, 2, 0, 3)));
+    // cc.kmVec3Normalize(s, s);
+    tmp = SIMD.float32x4.mul(s, s);
+    tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
+    s = SIMD.float32x4.mul(s, SIMD.float32x4.reciprocalSqrt(tmp));
+
+    // cc.kmVec3Cross(u, s, f);
+    var u = SIMD.float32x4.sub(SIMD.float32x4.mul(SIMD.float32x4.swizzle(s, 1, 2, 0, 3), SIMD.float32x4.swizzle(f, 2, 0, 1, 3)),
+                               SIMD.float32x4.mul(SIMD.float32x4.swizzle(s, 2, 0, 1, 3), SIMD.float32x4.swizzle(f, 1, 2, 0, 3)));
+    // cc.kmVec3Normalize(s, s);
+    tmp = SIMD.float32x4.mul(s, s);
+    tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
+    s = SIMD.float32x4.mul(s, SIMD.float32x4.reciprocalSqrt(tmp));
+
+    //cc.kmMat4Identity(pOut);
+    //pOut.mat[0] = s.x;
+    //pOut.mat[4] = s.y;
+    //pOut.mat[8] = s.z;
+    //pOut.mat[1] = u.x;
+    //pOut.mat[5] = u.y;
+    //pOut.mat[9] = u.z;
+    //pOut.mat[2] = -f.x;
+    //pOut.mat[6] = -f.y;
+    //pOut.mat[10] = -f.z;
+    var zero = SIMD.float32x4.splat(0.0);
+    f = SIMD.float32x4.neg(f);
+    var tmp01 = SIMD.float32x4.shuffle(s, u, 0, 1, 4, 5);
+    var tmp23 = SIMD.float32x4.shuffle(f, zero, 0, 1, 4, 5);
+    var a0  = SIMD.float32x4.shuffle(tmp01, tmp23, 0, 2, 4, 6);
+    var a1  = SIMD.float32x4.shuffle(tmp01, tmp23, 1, 3, 5, 7);
+
+    var tmp01 = SIMD.float32x4.shuffle(s, u, 2, 3, 6, 7);
+    var tmp23 = SIMD.float32x4.shuffle(f, zero, 2, 3, 6, 7);
+    var a2  = SIMD.float32x4.shuffle(tmp01, tmp23, 0, 2, 4, 6);
+    var a3  = SIMD.float32x4(0.0, 0.0, 0.0, 1.0);
+
+    // cc.kmMat4Translation(translate, -pEye.x, -pEye.y, -pEye.z);
+    var b0 = SIMD.float32x4(1.0, 0.0, 0.0, 0.0);
+    var b1 = SIMD.float32x4(0.0, 1.0, 0.0, 0.0);
+    var b2 = SIMD.float32x4(0.0, 0.0, 1.0, 0.0);
+    var b3 = SIMD.float32x4.neg(eye);
+    b3 = SIMD.float32x4.withW(b3, 1.0);
+
+    // cc.kmMat4Multiply(pOut, pOut, translate);
+    SIMD.float32x4.store(out, 0, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b0, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                 SIMD.float32x4.mul(SIMD.float32x4.swizzle(b0, 1, 1, 1, 1), a1),
+                 SIMD.float32x4.add(
+                      SIMD.float32x4.mul(SIMD.float32x4.swizzle(b0, 2, 2, 2, 2), a2),
+                      SIMD.float32x4.mul(SIMD.float32x4.swizzle(b0, 3, 3, 3, 3), a3)))));
+    SIMD.float32x4.store(out, 4, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b1, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                SIMD.float32x4.mul(SIMD.float32x4.swizzle(b1, 1, 1, 1, 1), a1),
+                SIMD.float32x4.add(
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b1, 2, 2, 2, 2), a2),
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b1, 3, 3, 3, 3), a3)))));
+    SIMD.float32x4.store(out, 8, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b2, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                SIMD.float32x4.mul(SIMD.float32x4.swizzle(b2, 1, 1, 1, 1), a1),
+                SIMD.float32x4.add(
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b2, 2, 2, 2, 2), a2),
+                     SIMD.float32x4.mul(SIMD.float32x4.swizzle(b2, 3, 3, 3, 3), a3)))));
+    SIMD.float32x4.store(out, 12, SIMD.float32x4.add(
+        SIMD.float32x4.mul(
+            SIMD.float32x4.swizzle(b3, 0, 0, 0, 0), a0),
+            SIMD.float32x4.add(
+                SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 1, 1, 1, 1), a1),
+                SIMD.float32x4.add(
+                    SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 2, 2, 2, 2), a2),
+                    SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 3, 3, 3, 3), a3)))));
+    return pOut;
+}
 
 /**
  * Build a rotation matrix from an axis and an angle. Result is stored in pOut.

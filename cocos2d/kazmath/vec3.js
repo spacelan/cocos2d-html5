@@ -32,6 +32,10 @@ cc.kmVec3 = function (x, y, z) {
     this.z = z || 0;
 };
 
+cc.kmVec3SIMD = function (x, y, z) {
+    this.data = new Float32Array([x, y, z, 0.0]);
+};
+
 cc.kmVec3Fill = function(pOut, x, y , z){
     if(!pOut)
         return new cc.kmVec3(x, y , z);
@@ -125,6 +129,26 @@ cc.kmVec3TransformCoord = function(pOut,pV,pM){
     pOut.x = v.x / v.w;
     pOut.y = v.y / v.w;
     pOut.z = v.z / v.w;
+
+    return pOut;
+};
+
+cc.kmVec3TransformCoordSIMD = function(pOut,pV,pM){
+    var vec = SIMD.float32x4.load(pV.data, 0);
+    var mat0 = SIMD.float32x4.load(pM.mat, 0);
+    var mat1 = SIMD.float32x4.load(pM.mat, 4);
+    var mat2 = SIMD.float32x4.load(pM.mat, 8);
+    var mat3 = SIMD.float32x4.load(pM.mat, 12);
+
+    //cc.kmVec4Transform(v, inV,pM);
+    var out = SIMD.float32x4.add(
+        SIMD.float32x4.add(SIMD.float32x4.mul(mat0, SIMD.float32x4.swizzle(vec, 0, 0, 0, 0)),
+                           SIMD.float32x4.mul(mat1, SIMD.float32x4.swizzle(vec, 1, 1, 1, 1))),
+        SIMD.float32x4.add(SIMD.float32x4.mul(mat2, SIMD.float32x4.swizzle(vec, 2, 2, 2, 2)),
+                           mat3));
+
+    out = SIMD.float32x4.div(out, SIMD.float32x4.swizzle(out, 3, 3, 3, 3));
+    SIMD.float32x4.store(pOut.data, 0, out);
 
     return pOut;
 };
