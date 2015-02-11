@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kazmath SIMD benchmarks</title>
+</head>
+<body>
+  <h1>Running benchmarks...</h1>
+  <div id='echo'></div>
+  <script>
+    var cc = {};
+  </script>
+  <script src="../utility.js"></script>
+  <script src="../vec3.js"></script>
+  <script src="../vec4.js"></script>
+  <script src="../mat4.js"></script>
+  <script src="base.js"></script>
+  <script src="kernel-template.js"></script>
+  <script src="kmMat4Multiply.js"></script>
+  <script src="kmMat4Assign.js"></script>
+  <script src="kmMat4AreEqual.js"></script>
+  <script src="kmMat4Inverse.js"></script>
+  <script src="kmMat4IsIdentity.js"></script>
+  <script src="kmMat4Transpose.js"></script>
+  <script src="kmMat4LookAt.js"></script>
+  <script src="kmVec3TransformCoord.js"></script>
+  <!-- Execute -->
+  <script src="run_browser.js"></script>
+</body>
+</html>
