@@ -1,4 +1,4 @@
-// kmMat4Multiply
+// kmMat4Transpose
 
 (function () {
 
