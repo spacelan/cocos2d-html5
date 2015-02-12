@@ -181,6 +181,95 @@ cc.kmMat4Inverse = function (pOut, pM) {
     return pOut;
 };
 
+// Streaming SIMD Extensions -Inverse of 4x4 Matrix
+// http://download.intel.com/design/PentiumIII/sml/24504301.pdf
+var tsrc = new Float32Array(16);
+var tmp   = new Float32Array(12);
+cc.kmMat4InverseCramer = function(pOut, pM) {
+    src = pM.mat;
+    dst = pOut.mat;
+    // Transpose the source matrix
+    for (var i = 0; i < 4; i++) {
+        tsrc[i] = src[i * 4];
+        tsrc[i + 4] = src[i * 4 + 1];
+        tsrc[i + 8] = src[i * 4 + 2];
+        tsrc[i + 12] = src[i * 4 + 3];
+    }
+
+    // Calculate pairs for first 8 elements (cofactors)
+    tmp[0] = tsrc[10] * tsrc[15];
+    tmp[1] = tsrc[11] * tsrc[14];
+    tmp[2] = tsrc[9] * tsrc[15];
+    tmp[3] = tsrc[11] * tsrc[13];
+    tmp[4] = tsrc[9] * tsrc[14];
+    tmp[5] = tsrc[10] * tsrc[13];
+    tmp[6] = tsrc[8] * tsrc[15];
+    tmp[7] = tsrc[11] * tsrc[12];
+    tmp[8] = tsrc[8] * tsrc[14];
+    tmp[9] = tsrc[10] * tsrc[12];
+    tmp[10] = tsrc[8] * tsrc[13];
+    tmp[11] = tsrc[9] * tsrc[12];
+
+    // calculate first 8 elements (cofactors)
+    dst[0] = tmp[0] * tsrc[5] + tmp[3] * tsrc[6] + tmp[4] * tsrc[7];
+    dst[0] -= tmp[1] * tsrc[5] + tmp[2] * tsrc[6] + tmp[5] * tsrc[7];
+    dst[1] = tmp[1] * tsrc[4] + tmp[6] * tsrc[6] + tmp[9] * tsrc[7];
+    dst[1] -= tmp[0] * tsrc[4] + tmp[7] * tsrc[6] + tmp[8] * tsrc[7];
+    dst[2] = tmp[2] * tsrc[4] + tmp[7] * tsrc[5] + tmp[10] * tsrc[7];
+    dst[2] -= tmp[3] * tsrc[4] + tmp[6] * tsrc[5] + tmp[11] * tsrc[7];
+    dst[3] = tmp[5] * tsrc[4] + tmp[8] * tsrc[5] + tmp[11] * tsrc[6];
+    dst[3] -= tmp[4] * tsrc[4] + tmp[9] * tsrc[5] + tmp[10] * tsrc[6];
+    dst[4] = tmp[1] * tsrc[1] + tmp[2] * tsrc[2] + tmp[5] * tsrc[3];
+    dst[4] -= tmp[0] * tsrc[1] + tmp[3] * tsrc[2] + tmp[4] * tsrc[3];
+    dst[5] = tmp[0] * tsrc[0] + tmp[7] * tsrc[2] + tmp[8] * tsrc[3];
+    dst[5] -= tmp[1] * tsrc[0] + tmp[6] * tsrc[2] + tmp[9] * tsrc[3];
+    dst[6] = tmp[3] * tsrc[0] + tmp[6] * tsrc[1] + tmp[11] * tsrc[3];
+    dst[6] -= tmp[2] * tsrc[0] + tmp[7] * tsrc[1] + tmp[10] * tsrc[3];
+    dst[7] = tmp[4] * tsrc[0] + tmp[9] * tsrc[1] + tmp[10] * tsrc[2];
+    dst[7] -= tmp[5] * tsrc[0] + tmp[8] * tsrc[1] + tmp[11] * tsrc[2];
+
+    // calculate pairs for second 8 elements (cofactors)
+    tmp[0] = tsrc[2] * tsrc[7];
+    tmp[1] = tsrc[3] * tsrc[6];
+    tmp[2] = tsrc[1] * tsrc[7];
+    tmp[3] = tsrc[3] * tsrc[5];
+    tmp[4] = tsrc[1] * tsrc[6];
+    tmp[5] = tsrc[2] * tsrc[5];
+    tmp[6] = tsrc[0] * tsrc[7];
+    tmp[7] = tsrc[3] * tsrc[4];
+    tmp[8] = tsrc[0] * tsrc[6];
+    tmp[9] = tsrc[2] * tsrc[4];
+    tmp[10] = tsrc[0] * tsrc[5];
+    tmp[11] = tsrc[1] * tsrc[4];
+
+    // calculate second 8 elements (cofactors)
+    dst[8] = tmp[0] * tsrc[13] + tmp[3] * tsrc[14] + tmp[4] * tsrc[15];
+    dst[8] -= tmp[1] * tsrc[13] + tmp[2] * tsrc[14] + tmp[5] * tsrc[15];
+    dst[9] = tmp[1] * tsrc[12] + tmp[6] * tsrc[14] + tmp[9] * tsrc[15];
+    dst[9] -= tmp[0] * tsrc[12] + tmp[7] * tsrc[14] + tmp[8] * tsrc[15];
+    dst[10] = tmp[2] * tsrc[12] + tmp[7] * tsrc[13] + tmp[10] * tsrc[15];
+    dst[10] -= tmp[3] * tsrc[12] + tmp[6] * tsrc[13] + tmp[11] * tsrc[15];
+    dst[11] = tmp[5] * tsrc[12] + tmp[8] * tsrc[13] + tmp[11] * tsrc[14];
+    dst[11] -= tmp[4] * tsrc[12] + tmp[9] * tsrc[13] + tmp[10] * tsrc[14];
+    dst[12] = tmp[2] * tsrc[10] + tmp[5] * tsrc[11] + tmp[1] * tsrc[9];
+    dst[12] -= tmp[4] * tsrc[11] + tmp[0] * tsrc[9] + tmp[3] * tsrc[10];
+    dst[13] = tmp[8] * tsrc[11] + tmp[0] * tsrc[8] + tmp[7] * tsrc[10];
+    dst[13] -= tmp[6] * tsrc[10] + tmp[9] * tsrc[11] + tmp[1] * tsrc[8];
+    dst[14] = tmp[6] * tsrc[9] + tmp[11] * tsrc[11] + tmp[3] * tsrc[8];
+    dst[14] -= tmp[10] * tsrc[11] + tmp[2] * tsrc[8] + tmp[7] * tsrc[9];
+    dst[15] = tmp[10] * tsrc[10] + tmp[4] * tsrc[8] + tmp[9] * tsrc[9];
+    dst[15] -= tmp[8] * tsrc[9] + tmp[11] * tsrc[10] + tmp[5] * tsrc[8];
+
+    // calculate determinant
+    var det = tsrc[0] * dst[0] + tsrc[1] * dst[1] + tsrc[2] * dst[2] + tsrc[3] * dst[3];
+
+    // calculate matrix inverse
+    det = 1 / det;
+    for (var j = 0; j < 16; j++) {
+        dst[j] *= det;
+    }
+}
+
 cc.kmMat4InverseSIMD = function (pOut, pM) {
     var src = pM.mat;
     var dest = pOut.mat;

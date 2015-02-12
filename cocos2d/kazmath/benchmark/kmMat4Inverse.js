@@ -1,4 +1,4 @@
-// kmMat4Multiply
+// kmMat4Inverse
 
 (function () {
 
@@ -16,21 +16,43 @@
   benchmarks.add(new Benchmark(kernelConfig));
 
   // Benchmark data, initialization and kernel functions
-  var T1 = new cc.kmMat4();
-  var T2 = new cc.kmMat4();
-  var T1x4 = new cc.kmMat4();
-  var T2x4 = new cc.kmMat4();
+  var src = new cc.kmMat4();
+  var dst = new cc.kmMat4();
+  var srcx4 = new cc.kmMat4();
+  var dstx4 = new cc.kmMat4();
+  var ident = new Float32Array(
+                    [1,0,0,0,
+                     0,1,0,0,
+                     0,0,1,0,
+                     0,0,0,1]);
 
   function equals(A, B) {
     for (var i = 0; i < 16; ++i) {
-      if (Math.abs (A[i] - B[i]) > 0.00001)
+      if (Math.abs (A[i] - B[i]) > 5)
         return false;
     }
     return true;
   }
 
-  function printMatrix(matrix) {
-    print('--------matrix----------');
+  function initMatrix(matrix) {
+    // These values were chosen somewhat randomly, but they will at least yield a solution.
+    matrix [0]  =  0;  matrix[1] =  1; matrix[2]  =  2; matrix[3]  =  3;
+    matrix [4]  = -1; matrix[5]  = -2; matrix[6]  = -3; matrix[7]  = -4;
+    matrix [8]  =  0;  matrix[9] =  0; matrix[10] =  2; matrix[11] =  3;
+    matrix [12] = -1; matrix[13] = -2; matrix[14] =  0; matrix[15] = -4;
+  }
+
+  function mulMatrix(dst, op1, op2) {
+    for (var r = 0; r < 4; ++r) {
+      for (var c = 0; c < 4; ++c) {
+        var ri = 4*r;
+        dst[ri + c] = op1[ri]*op2[c] + op1[ri+1]*op2[c+4] + op1[ri+2]*op2[c+8] + op1[ri+3]*op2[c+12]
+      }
+    }
+  }
+
+  function printMatrix(matrix, str) {
+    print('--------matrix ' + str + '----------');
     for (var r = 0; r < 4; ++r) {
       var str = "";
       var ri = r*4;
@@ -42,23 +64,35 @@
     }
   }
 
+  function checkMatrix(src, dst) {
+    // when multiplied with the src matrix it should yield the identity matrix
+    var tmp   = new Float32Array(16);
+    mulMatrix(tmp, src, dst);
+    for (var i = 0; i < 16; ++i) {
+      if (Math.abs (tmp[i] - ident[i]) > 0.00001) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function init() {
-    T1.mat [0]  =  0;  T1.mat[1] =  1; T1.mat[2]  =  2; T1.mat[3]  =  3;
-    T1.mat [4]  = -1; T1.mat[5]  = -2; T1.mat[6]  = -3; T1.mat[7]  = -4;
-    T1.mat [8]  =  0;  T1.mat[9] =  0; T1.mat[10] =  2; T1.mat[11] =  3;
-    T1.mat [12] = -1; T1.mat[13] = -2; T1.mat[14] =  0; T1.mat[15] = -4;
-
-    T1x4.mat [0]  =  0;  T1x4.mat[1] =  1; T1x4.mat[2]  =  2; T1x4.mat[3]  =  3;
-    T1x4.mat [4]  = -1; T1x4.mat[5]  = -2; T1x4.mat[6]  = -3; T1x4.mat[7]  = -4;
-    T1x4.mat [8]  =  0;  T1x4.mat[9] =  0; T1x4.mat[10] =  2; T1x4.mat[11] =  3;
-    T1x4.mat [12] = -1; T1x4.mat[13] = -2; T1x4.mat[14] =  0; T1x4.mat[15] = -4;
-
+    initMatrix(src);
+    // printMatrix(src);
     nonSimd(1);
-    //printMatrix(T2.mat);
+    // printMatrix(dst);
+    if (!checkMatrix(src, dst)) {
+      return false;
+    }
+
+    initMatrix(srcx4);
     simd(1);
-    //printMatrix(T2x4.mat);
-    return equals(T1.mat, T1x4.mat) && equals(T2.mat, T2x4.mat);
-    
+    // printMatrix(dst);
+    if (!checkMatrix(srcx4, dstx4)) {
+      return false;
+    }
+
+    return true;
   }
 
   function cleanup() {
@@ -67,13 +101,13 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4Inverse(T2, T1);
+      cc.kmMat4Inverse(dst, src);
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4InverseSIMD(T2x4, T1x4);
+      cc.kmMat4InverseSIMD(dstx4, srcx4);       
     }
   }
 
