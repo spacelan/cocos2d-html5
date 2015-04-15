@@ -371,7 +371,7 @@ cc.kmMat4InverseSIMD = function (pOut, pM) {
     det   = SIMD.float32x4.mul(row0, minor0);
     det   = SIMD.float32x4.add(SIMD.float32x4.swizzle(det, 2, 3, 0, 1), det); // 0x4E = 01001110
     det   = SIMD.float32x4.add(SIMD.float32x4.swizzle(det, 1, 0, 3, 2), det); // 0xB1 = 10110001
-    tmp1  = SIMD.float32x4.reciprocal(det);
+    tmp1  = SIMD.float32x4.reciprocalApproximation(det);
     det   = SIMD.float32x4.sub(SIMD.float32x4.add(tmp1, tmp1), SIMD.float32x4.mul(det, SIMD.float32x4.mul(tmp1, tmp1)));
     det   = SIMD.float32x4.swizzle(det, 0, 0, 0, 0);
 
@@ -1067,13 +1067,13 @@ cc.kmMat4LookAtSIMD = function (pOut, pEye, pCenter, pUp) {
     // cc.kmVec3Normalize(f, f);    
     var tmp = SIMD.float32x4.mul(f, f);
     tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
-    f = SIMD.float32x4.mul(f, SIMD.float32x4.reciprocalSqrt(tmp));
+    f = SIMD.float32x4.mul(f, SIMD.float32x4.reciprocalSqrtApproximation(tmp));
 
     // cc.kmVec3Assign(up, pUp);
     // cc.kmVec3Normalize(up, up);
     tmp = SIMD.float32x4.mul(up, up);
     tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
-    up = SIMD.float32x4.mul(up, SIMD.float32x4.reciprocalSqrt(tmp));
+    up = SIMD.float32x4.mul(up, SIMD.float32x4.reciprocalSqrtApproximation(tmp));
 
     // cc.kmVec3Cross(s, f, up);
     var s = SIMD.float32x4.sub(SIMD.float32x4.mul(SIMD.float32x4.swizzle(f, 1, 2, 0, 3), SIMD.float32x4.swizzle(up, 2, 0, 1, 3)),
@@ -1081,7 +1081,7 @@ cc.kmMat4LookAtSIMD = function (pOut, pEye, pCenter, pUp) {
     // cc.kmVec3Normalize(s, s);
     tmp = SIMD.float32x4.mul(s, s);
     tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
-    s = SIMD.float32x4.mul(s, SIMD.float32x4.reciprocalSqrt(tmp));
+    s = SIMD.float32x4.mul(s, SIMD.float32x4.reciprocalSqrtApproximation(tmp));
 
     // cc.kmVec3Cross(u, s, f);
     var u = SIMD.float32x4.sub(SIMD.float32x4.mul(SIMD.float32x4.swizzle(s, 1, 2, 0, 3), SIMD.float32x4.swizzle(f, 2, 0, 1, 3)),
@@ -1089,7 +1089,7 @@ cc.kmMat4LookAtSIMD = function (pOut, pEye, pCenter, pUp) {
     // cc.kmVec3Normalize(s, s);
     tmp = SIMD.float32x4.mul(s, s);
     tmp = SIMD.float32x4.add(tmp, SIMD.float32x4.add(SIMD.float32x4.swizzle(tmp, 1, 2, 0, 3), SIMD.float32x4.swizzle(tmp, 2, 0, 1, 3)));
-    s = SIMD.float32x4.mul(s, SIMD.float32x4.reciprocalSqrt(tmp));
+    s = SIMD.float32x4.mul(s, SIMD.float32x4.reciprocalSqrtApproximation(tmp));
 
     //cc.kmMat4Identity(pOut);
     //pOut.mat[0] = s.x;
