@@ -33,7 +33,7 @@ cc.kmVec4 = function (x, y, z, w) {
     this.w = w || 0;
 };
 
-cc.kmVec3SIMD = function (x, y, z, w) {
+cc.kmVec4SIMD = function (x, y, z, w) {
     this.data = new Float32Array([x, y, z, w]);
 };
 
@@ -160,3 +160,6 @@ cc.kmVec4ToTypeArray = function(vecValue){
     return tyArr;
 };
 
+if (typeof(SIMD) !== 'undefined' && !cc.doNotUseSIMD) {
+    cc.kmVec4 = cc.kmVec4SIMD;
+}

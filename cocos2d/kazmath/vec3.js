@@ -218,12 +218,7 @@ cc.kmVec3ToTypeArray = function(vecValue){
     return tyArr;
 };
 
-
-
-
-
-
-
-
-
-
+if (typeof(SIMD) !== 'undefined' && !cc.doNotUseSIMD) {
+    cc.kmVec3 = cc.kmVec3SIMD;
+    cc.kmVec3TransformCoord = cc.kmVec3TransformCoordSIMD;
+}

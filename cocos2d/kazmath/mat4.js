@@ -1278,7 +1278,12 @@ cc.kmMat4RotationToAxisAngle = function (pAxis, radians, pIn) {
     return pAxis;
 };
 
-
-
-
-
+if (typeof(SIMD) !== 'undefined' && !cc.doNotUseSIMD) {
+    cc.kmMat4Inverse = cc.kmMat4InverseSIMD;
+    cc.kmMat4IsIdentity = cc.kmMat4IsIdentitySIMD;
+    cc.kmMat4Transpose = cc.kmMat4TransposeSIMD;
+    cc.kmMat4Multiply = cc.kmMat4MultiplySIMD;
+    cc.kmMat4Assign = cc.kmMat4AssignSIMD;
+    cc.kmMat4AreEqual = cc.kmMat4AreEqualSIMD;
+    cc.kmMat4LookAt = cc.kmMat4LookAtSIMD;
+}
