@@ -4,8 +4,19 @@
   <meta charset="utf-8">
   <title>Kazmath SIMD benchmarks</title>
 </head>
+<link href="http://cdn.bootcss.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
 <body>
-  <h1>Running benchmarks...</h1>
+  <h1 align="center" id="head">Running benchmarks...</h1>
+  <div sytle="padding: 10px">
+    <div style="width: 50%;float: left">
+      <h2 align="center" id="time"></h2>
+      <canvas id="canvasTime"></canvas>
+    </div>
+    <div style="width: 50%;float: left">
+      <h2 align="center" id="speedup"></h2>
+      <canvas id="canvasSpeedup"></canvas>
+    </div>
+  </div>
   <div id='echo'></div>
   <script>
     var cc = {};
@@ -25,6 +36,7 @@
   <script src="kmMat4Transpose.js"></script>
   <script src="kmMat4LookAt.js"></script>
   <script src="kmVec3TransformCoord.js"></script>
+  <script src="http://cdn.bootcss.com/Chart.js/1.0.2/Chart.min.js"></script>
   <!-- Execute -->
   <script src="run_browser.js"></script>
 </body>

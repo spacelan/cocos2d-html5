@@ -116,6 +116,11 @@ Benchmarks.prototype.report = function (benchmark, outputFunctions) {
     ", SIMD(" + fillLeft(benchmark.simdTime + "ms)", 8) +
     ", Non-SIMD(" + fillLeft(benchmark.nonSimdTime + "ms)", 8) +
     ", Speedup(" + ratio.toFixed(3) + ")");
+  outputFunctions.timeData.labels.push(benchmark.config.kernelName);
+  outputFunctions.timeData.datasets[0].data.push(benchmark.nonSimdTime);
+  outputFunctions.timeData.datasets[1].data.push(benchmark.simdTime);
+  outputFunctions.speedupData.labels.push(benchmark.config.kernelName);
+  outputFunctions.speedupData.datasets[0].data.push(ratio);
 }
 
 Benchmarks.prototype.runAll = function (outputFunctions, useAutoIterations) {
