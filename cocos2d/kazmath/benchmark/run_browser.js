@@ -68,7 +68,6 @@ window.onload = function() {
   });
   var ctx2 = document.getElementById("canvasSpeedup").getContext("2d");
   window.Bar2 = new Chart(ctx2).Bar(speedupData, {
-    scaleLabel: "<%=value%>%",
     responsive: true
   });
   console.log('Benchmarks completed.');
