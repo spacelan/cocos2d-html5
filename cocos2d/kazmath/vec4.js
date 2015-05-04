@@ -40,7 +40,13 @@
             this.w = w || 0;
         }
     };
+
+    cc.math.Vec4SIMD = function(x, y, z, w) {
+        this.data = new Float32Array([x, y, z, w]);
+    };
+
     cc.kmVec4 = cc.math.Vec4;
+    cc.kmVec4SIMD = cc.math.Vec4SIMD;
     var proto = cc.math.Vec4.prototype;
 
     proto.fill = function (x, y, z, w) {     //=cc.kmVec4Fill

@@ -39,11 +39,20 @@
         }
     };
 
+    cc.kmVec3SIMD = cc.math.Vec3SIMD = function(x, y, z) {
+        this.data = new Float32Array([x, y, z, 0.0]);
+    };
+
     cc.math.vec3 = function(x, y, z){
         return new cc.math.Vec3(x, y, z);
     };
 
+    cc.math.vec3SIMD = function(x, y, z) {
+        return new cc.math.Vec3SIMD(x, y, z);
+    };
+
     var proto = cc.math.Vec3.prototype;
+    cc.math.Vec3SIMD.prototype = new cc.math.Vec3();
 
     proto.fill = function (x, y, z) {    // =cc.kmVec3Fill
         if (x && y === undefined) {
@@ -133,6 +142,26 @@
         this.x = v.x / v.w;
         this.y = v.y / v.w;
         this.z = v.z / v.w;
+        return this;
+    };
+
+    proto.transformCoordSIMD = function(mat4){
+        var vec = SIMD.float32x4.load(this.data, 0);
+        var mat0 = SIMD.float32x4.load(mat4.mat, 0);
+        var mat1 = SIMD.float32x4.load(mat4.mat, 4);
+        var mat2 = SIMD.float32x4.load(mat4.mat, 8);
+        var mat3 = SIMD.float32x4.load(mat4.mat, 12);
+
+        //cc.kmVec4Transform(v, inV,pM);
+        var out = SIMD.float32x4.add(
+            SIMD.float32x4.add(SIMD.float32x4.mul(mat0, SIMD.float32x4.swizzle(vec, 0, 0, 0, 0)),
+                               SIMD.float32x4.mul(mat1, SIMD.float32x4.swizzle(vec, 1, 1, 1, 1))),
+            SIMD.float32x4.add(SIMD.float32x4.mul(mat2, SIMD.float32x4.swizzle(vec, 2, 2, 2, 2)),
+                               mat3));
+
+        out = SIMD.float32x4.div(out, SIMD.float32x4.swizzle(out, 3, 3, 3, 3));
+        SIMD.float32x4.store(this.data, 0, out);
+
         return this;
     };
 
