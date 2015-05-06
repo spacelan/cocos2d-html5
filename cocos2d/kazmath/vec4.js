@@ -28,18 +28,15 @@
 
 (function(cc) {
     cc.math.Vec4 = function (x, y, z, w) {
-        /*if (x && y === undefined) {
-            this.x = x.x;
-            this.y = x.y;
-            this.z = x.z;
-            this.w = x.w;
+        if (x && y === undefined) {
+            this.data = new Float32Array([x.x, x.y, x.z, x.w]);
         } else {
-            this.x = x || 0;
-            this.y = y || 0;
-            this.z = z || 0;
-            this.w = w || 0;
-        }*/
-        this.data = new Float32Array([x, y, z, w]);
+            x = x || 0;
+            y = y || 0;
+            z = z || 0;
+            w = w || 0;
+            this.data = new Float32Array([x, y, z, w]);
+        }
     };
 
     /*cc.math.Vec4SIMD = function(x, y, z, w) {

@@ -28,16 +28,14 @@
 
 (function(cc) {
     cc.kmVec3 = cc.math.Vec3 = function (x, y, z) {
-        /*if(x && y === undefined){
-            this.x = x.x;
-            this.y = x.y;
-            this.z = x.z;
+        if (x && y === undefined) {
+            this.data = new Float32Array([x.x, x.y, x.z, 0.0]);
         } else {
-            this.x = x || 0;
-            this.y = y || 0;
-            this.z = z || 0;
-        }*/
-        this.data = new Float32Array([x, y, z, 0.0]);
+            x = x || 0;
+            y = y || 0;
+            z = z || 0;
+            this.data = new Float32Array([x, y, z, 0.0]);
+        }
     };
 
     /*cc.kmVec3SIMD = cc.math.Vec3SIMD = function(x, y, z) {
