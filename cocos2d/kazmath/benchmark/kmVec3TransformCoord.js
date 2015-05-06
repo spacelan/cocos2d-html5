@@ -19,9 +19,9 @@
   var V = new cc.kmVec3();
   var T = new cc.kmMat4();
   var Out = new cc.kmVec3();
-  var Vx4 = new cc.kmVec3SIMD();
+  var Vx4 = new cc.kmVec3();
   var Tx4 = new cc.kmMat4();
-  var Outx4 = new cc.kmVec3SIMD();
+  var Outx4 = new cc.kmVec3();
 
   function init() {
     T.mat[0] = 1.0;
@@ -44,7 +44,9 @@
 
     nonSimd(1);
     simd(1);
-    return (V.x == Vx4.data[0]) && (V.y == Vx4.data[1]) && (V.z == Vx4.data[2]);
+    //console.log(V);
+    //console.log(Vx4);
+    return (V.data[0] == Vx4.data[0]) && (V.data[1] == Vx4.data[1]) && (V.data[2] == Vx4.data[2]);
     
   }
 

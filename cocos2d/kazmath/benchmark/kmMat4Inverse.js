@@ -77,18 +77,18 @@
   }
 
   function init() {
-    initMatrix(src);
+    initMatrix(src.mat);
     // printMatrix(src);
     nonSimd(1);
     // printMatrix(dst);
-    if (!checkMatrix(src, dst)) {
+    if (!checkMatrix(src.mat, dst.mat)) {
       return false;
     }
 
-    initMatrix(srcx4);
+    initMatrix(srcx4.mat);
     simd(1);
     // printMatrix(dst);
-    if (!checkMatrix(srcx4, dstx4)) {
+    if (!checkMatrix(srcx4.mat, dstx4.mat)) {
       return false;
     }
 
@@ -101,13 +101,15 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4Inverse(dst, src);
+      //cc.kmMat4Inverse(dst, src);
+      dst = src.inverse();
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4InverseSIMD(dstx4, srcx4);       
+      //cc.kmMat4InverseSIMD(dstx4, srcx4);
+      dstx4 = srcx4.inverseSIMD();
     }
   }
 

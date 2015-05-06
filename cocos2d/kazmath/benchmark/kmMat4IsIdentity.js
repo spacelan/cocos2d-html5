@@ -18,6 +18,7 @@
   // Benchmark data, initialization and kernel functions
   var T1 = new cc.kmMat4();
   var T1x4 = new cc.kmMat4();
+  var isIdentity, isIdentitySIMD;
 
   function equals(A, B) {
     for (var i = 0; i < 16; ++i) {
@@ -41,7 +42,7 @@
     nonSimd(1);
     simd(1);
 
-    return equals(T1.mat, T1x4.mat);
+    return equals(T1.mat, T1x4.mat) && (isIdentity === isIdentitySIMD);
     
   }
 
@@ -51,14 +52,13 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      T1.isIdentity();
+      isIdentitySIMD = T1.isIdentity();
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      //T1x4.isIdentitySIMD();
-      cc.kmMat4IsIdentitySIMD(T1x4);
+      isIdentitySIMD = T1x4.isIdentitySIMD();
     }
   }
 

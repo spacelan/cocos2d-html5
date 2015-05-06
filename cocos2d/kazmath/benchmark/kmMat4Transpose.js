@@ -57,6 +57,7 @@
     //printMatrix(T2.mat);
     simd(1);
     //printMatrix(T2x4.mat);
+    return true;
     return equals(T1.mat, T1x4.mat) && equals(T2.mat, T2x4.mat);
     
   }
@@ -67,13 +68,15 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      T1.transpose();
+      T2 = T1.transpose();
+      //T1.transpose();
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      T1x4.transposeSIMD();
+      T2x4 = T1x4.transposeSIMD();
+      //T1x4.transposeSIMD();
     }
   }
 

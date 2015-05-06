@@ -55,7 +55,6 @@
     nonSimd(1);
     simd(1);
     return equals(T1.mat, T1x4.mat) && equals(T2.mat, T2x4.mat) && equals(Out.mat, Outx4.mat);
-    
   }
 
   function cleanup() {
@@ -64,13 +63,17 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4Multiply(Out, T1, T2);
+      Out.fill(T1.mat);
+      Out.multiply(T2);
+      //T1.multiply(T2);
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4MultiplySIMD(Outx4, T1x4, T2x4);
+      Outx4.fill(T1x4.mat);
+      Outx4.multiplySIMD(T2x4);
+      //T1x4.multiplySIMD(T2x4);
     }
   }
 

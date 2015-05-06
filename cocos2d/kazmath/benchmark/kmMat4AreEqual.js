@@ -20,6 +20,7 @@
   var T2 = new cc.kmMat4();
   var T1x4 = new cc.kmMat4();
   var T2x4 = new cc.kmMat4();
+  var areEqual, areEqualSIMD;
 
   function equals(A, B) {
     for (var i = 0; i < 16; ++i) {
@@ -53,7 +54,7 @@
     nonSimd(1);
     simd(1);
 
-    return equals(T1.mat, T1x4.mat) && equals(T2.mat, T2x4.mat);
+    return equals(T1.mat, T1x4.mat) && equals(T2.mat, T2x4.mat) && (areEqual === areEqualSIMD);
     
   }
 
@@ -63,13 +64,13 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      T1.equals(T2);
+      areEqual = T1.equals(T2);
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      T1x4.equalsSIMD(T2x4);
+      areEqualSIMD = T1x4.equalsSIMD(T2x4);
     }
   }
 
