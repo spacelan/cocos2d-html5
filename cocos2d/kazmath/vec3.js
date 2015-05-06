@@ -28,7 +28,7 @@
 
 (function(cc) {
     cc.kmVec3 = cc.math.Vec3 = function (x, y, z) {
-        if(x && y === undefined){
+        /*if(x && y === undefined){
             this.x = x.x;
             this.y = x.y;
             this.z = x.z;
@@ -36,23 +36,51 @@
             this.x = x || 0;
             this.y = y || 0;
             this.z = z || 0;
-        }
-    };
-
-    cc.kmVec3SIMD = cc.math.Vec3SIMD = function(x, y, z) {
+        }*/
         this.data = new Float32Array([x, y, z, 0.0]);
     };
+
+    /*cc.kmVec3SIMD = cc.math.Vec3SIMD = function(x, y, z) {
+        this.data = new Float32Array([x, y, z, 0.0]);
+    };*/
 
     cc.math.vec3 = function(x, y, z){
         return new cc.math.Vec3(x, y, z);
     };
 
-    cc.math.vec3SIMD = function(x, y, z) {
+    /*cc.math.vec3SIMD = function(x, y, z) {
         return new cc.math.Vec3SIMD(x, y, z);
-    };
+    };*/
 
     var proto = cc.math.Vec3.prototype;
-    cc.math.Vec3SIMD.prototype = new cc.math.Vec3();
+    //cc.math.Vec3SIMD.prototype = new cc.math.Vec3();
+
+    Object.defineProperty(proto, 'x', {
+        get: function() {
+            return this.data[0];
+        },
+        set: function(value) {
+            this.data[0] = value;
+        }
+    });
+
+    Object.defineProperty(proto, 'y', {
+        get: function() {
+            return this.data[1];
+        },
+        set: function(value) {
+            this.data[1] = value;
+        }
+    });
+
+    Object.defineProperty(proto, 'z', {
+        get: function() {
+            return this.data[2];
+        },
+        set: function(value) {
+            this.data[2] = value;
+        }
+    });
 
     proto.fill = function (x, y, z) {    // =cc.kmVec3Fill
         if (x && y === undefined) {

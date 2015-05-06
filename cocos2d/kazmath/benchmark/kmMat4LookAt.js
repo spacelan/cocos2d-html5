@@ -18,7 +18,7 @@
   // Benchmark data, initialization and kernel functions
   var eye = new cc.kmVec3(), center = new cc.kmVec3(), up = new cc.kmVec3();
   var T1 = new cc.kmMat4();
-  var eye1 = new cc.kmVec3SIMD(), center1 = new cc.kmVec3SIMD(), up1 = new cc.kmVec3SIMD();
+  var eye1 = new cc.kmVec3(), center1 = new cc.kmVec3(), up1 = new cc.kmVec3();
   var T1x4 = new cc.kmMat4();
 
   function printMatrix(matrix) {
@@ -75,13 +75,15 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4LookAt(T1, eye, center, up);
+      //cc.kmMat4LookAt(T1, eye, center, up);
+      T1.lookAt(eye, center, up);
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4LookAtSIMD(T1x4, eye1, center1, up1);
+      //cc.kmMat4LookAtSIMD(T1x4, eye1, center1, up1);
+      T1x4.lookAtSIMD(eye1, center1, up1);
     }
   }
 

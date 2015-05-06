@@ -53,13 +53,15 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4Assign(T2, T1);
+      //cc.kmMat4Assign(T2, T1);
+      T2.assignFrom(T1);
     }
   }
 
   function simd(n) {
     for (var i = 0; i < n; i++) {
-      cc.kmMat4AssignSIMD(T2x4, T1x4);
+      //cc.kmMat4AssignSIMD(T2x4, T1x4);
+      T2x4.assignFromSIMD(T1x4);
     }
   }
 

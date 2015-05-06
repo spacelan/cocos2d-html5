@@ -189,8 +189,26 @@
     };
 
     cc.kmMat4InverseSIMD = function (pOut, pM) {
-        var src = pM.mat;
-        var dest = pOut.mat;
+        pOut = pM.inverseSIMD();
+        return pOut;
+    };
+
+    /**
+     * Calculates the inverse of current matrix.
+     * @returns {cc.math.Matrix4} Returns null if there is no inverse, else returns a new inverse matrix object
+     */
+    proto.inverse = function(){    //cc.kmMat4Inverse
+        var inv = new cc.math.Matrix4(this);
+        var tmp = new cc.math.Matrix4(identityMatrix);
+        if (cc.math.Matrix4._gaussj(inv, tmp) === false)
+            return null;
+        return inv;
+    };
+    
+    proto.inverseSIMD = function(){
+        var inv = new cc.math.Matrix4();
+        var src = this.mat;
+        var dest = inv.mat;
         var src0, src1, src2, src3;
         var row0, row1, row2, row3;
         var tmp1;
@@ -311,24 +329,7 @@
         SIMD.float32x4.store(dest, 8, minor2);
         SIMD.float32x4.store(dest, 12, minor3);
 
-        return pOut;
-    };
-
-    /**
-     * Calculates the inverse of current matrix.
-     * @returns {cc.math.Matrix4} Returns null if there is no inverse, else returns a new inverse matrix object
-     */
-    proto.inverse = function(){    //cc.kmMat4Inverse
-        var inv = new cc.math.Matrix4(this);
-        var tmp = new cc.math.Matrix4(identityMatrix);
-        if (cc.math.Matrix4._gaussj(inv, tmp) === false)
-            return null;
         return inv;
-    };
-
-    proto.inverse = function(){
-        var inv = new cc.math.Matrix4();
-        return cc.kmMat4InverseSIMD(inv, this);
     };
 
     /**
@@ -362,33 +363,6 @@
             return false;
         
         inx4 = SIMD.float32x4.load(this.mat, 12);
-        identityx4 = SIMD.float32x4.load(identityMatrix.mat, 12);
-        ret = SIMD.float32x4.equal(inx4, identityx4);
-        if(ret.signMask === 0x00)
-            return false;
-        return true;
-    };
-
-    cc.kmMat4IsIdentitySIMD = function (pIn) {
-        var inx4 = SIMD.float32x4.load(pIn.mat, 0);
-        var identityx4 = SIMD.float32x4.load(identityMatrix.mat, 0);
-        var ret = SIMD.float32x4.equal(inx4, identityx4);
-        if(ret.signMask === 0x00)
-            return false;
-            
-        inx4 = SIMD.float32x4.load(pIn.mat, 4);
-        identityx4 = SIMD.float32x4.load(identityMatrix.mat, 4);
-        ret = SIMD.float32x4.equal(inx4, identityx4);
-        if(ret.signMask === 0x00)
-            return false;
-        
-        inx4 = SIMD.float32x4.load(pIn.mat, 8);
-        identityx4 = SIMD.float32x4.load(identityMatrix.mat, 8);
-        ret = SIMD.float32x4.equal(inx4, identityx4);
-        if(ret.signMask === 0x00)
-            return false;
-        
-        inx4 = SIMD.float32x4.load(pIn.mat, 12);
         identityx4 = SIMD.float32x4.load(identityMatrix.mat, 12);
         ret = SIMD.float32x4.equal(inx4, identityx4);
         if(ret.signMask === 0x00)
@@ -453,36 +427,6 @@
         return this;
     };
 
-    cc.kmMat4TransposeSIMD = function (pOut, pIn) {
-        var outArr = pOut.mat, inArr = pIn.mat;
-        var src0     = SIMD.float32x4.load(inArr, 0);
-        var src1     = SIMD.float32x4.load(inArr, 4);
-        var src2     = SIMD.float32x4.load(inArr, 8);
-        var src3     = SIMD.float32x4.load(inArr, 12);
-        var dst0;
-        var dst1;
-        var dst2;
-        var dst3;
-        var tmp01;
-        var tmp23;
-
-        tmp01 = SIMD.float32x4.shuffle(src0, src1, 0, 1, 4, 5);
-        tmp23 = SIMD.float32x4.shuffle(src2, src3, 0, 1, 4, 5);
-        dst0  = SIMD.float32x4.shuffle(tmp01, tmp23, 0, 2, 4, 6);
-        dst1  = SIMD.float32x4.shuffle(tmp01, tmp23, 1, 3, 5, 7);
-
-        tmp01 = SIMD.float32x4.shuffle(src0, src1, 2, 3, 6, 7);
-        tmp23 = SIMD.float32x4.shuffle(src2, src3, 2, 3, 6, 7);
-        dst2  = SIMD.float32x4.shuffle(tmp01, tmp23, 0, 2, 4, 6);
-        dst3  = SIMD.float32x4.shuffle(tmp01, tmp23, 1, 3, 5, 7);
-
-        SIMD.float32x4.store(outArr, 0, dst0);
-        SIMD.float32x4.store(outArr, 4, dst1);
-        SIMD.float32x4.store(outArr, 8, dst2);
-        SIMD.float32x4.store(outArr, 12, dst3);
-        return pOut;
-    };
-
     /**
      * Multiplies pM1 with pM2, stores the result in pOut, returns pOut
      */
@@ -519,9 +463,51 @@
     };
 
     cc.kmMat4MultiplySIMD = function (pOut, pM1, pM2) {
-        var a = pM1.mat;
-        var b = pM2.mat;
-        var out = pOut.mat;
+        pOut = new cc.math.Matrix4(pM1);
+        return pOut.multiplySIMD(pM2);
+    };
+
+    /**
+     * current matrix multiplies with other matrix mat4
+     * @param {cc.math.Matrix4} mat4
+     * @returns {cc.math.Matrix4}
+     */
+    proto.multiply = function(mat4){
+        // Cache the matrix values (makes for huge speed increases!)
+        var mat = this.mat, mat2 = mat4.mat;
+        var a00 = mat[0], a01 = mat[1], a02 = mat[2], a03 = mat[3];
+        var a10 = mat[4], a11 = mat[5], a12 = mat[6], a13 = mat[7];
+        var a20 = mat[8], a21 = mat[9], a22 = mat[10], a23 = mat[11];
+        var a30 = mat[12], a31 = mat[13], a32 = mat[14], a33 = mat[15];
+
+        var b00 = mat2[0], b01 = mat2[1], b02 = mat2[2], b03 = mat2[3];
+        var b10 = mat2[4], b11 = mat2[5], b12 = mat2[6], b13 = mat2[7];
+        var b20 = mat2[8], b21 = mat2[9], b22 = mat2[10], b23 = mat2[11];
+        var b30 = mat2[12], b31 = mat2[13], b32 = mat2[14], b33 = mat2[15];
+
+        mat[0] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30;
+        mat[1] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31;
+        mat[2] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32;
+        mat[3] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33;
+        mat[4] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30;
+        mat[5] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31;
+        mat[6] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32;
+        mat[7] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33;
+        mat[8] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30;
+        mat[9] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31;
+        mat[10] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32;
+        mat[11] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33;
+        mat[12] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30;
+        mat[13] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31;
+        mat[14] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32;
+        mat[15] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33;
+        return this;
+    };
+
+    proto.multiplySIMD = function(mat4) {
+        var a = this.mat;
+        var b = mat4.mat;
+        var out = this.mat;
             
         var a0 = SIMD.float32x4.load(a,0);
         var a1 = SIMD.float32x4.load(a,4);
@@ -564,49 +550,7 @@
                         SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 2, 2, 2, 2), a2),
                         SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 3, 3, 3, 3), a3)))));
 
-        return pOut;
-    };
-
-    /**
-     * current matrix multiplies with other matrix mat4
-     * @param {cc.math.Matrix4} mat4
-     * @returns {cc.math.Matrix4}
-     */
-    proto.multiply = function(mat4){
-        // Cache the matrix values (makes for huge speed increases!)
-        var mat = this.mat, mat2 = mat4.mat;
-        var a00 = mat[0], a01 = mat[1], a02 = mat[2], a03 = mat[3];
-        var a10 = mat[4], a11 = mat[5], a12 = mat[6], a13 = mat[7];
-        var a20 = mat[8], a21 = mat[9], a22 = mat[10], a23 = mat[11];
-        var a30 = mat[12], a31 = mat[13], a32 = mat[14], a33 = mat[15];
-
-        var b00 = mat2[0], b01 = mat2[1], b02 = mat2[2], b03 = mat2[3];
-        var b10 = mat2[4], b11 = mat2[5], b12 = mat2[6], b13 = mat2[7];
-        var b20 = mat2[8], b21 = mat2[9], b22 = mat2[10], b23 = mat2[11];
-        var b30 = mat2[12], b31 = mat2[13], b32 = mat2[14], b33 = mat2[15];
-
-        mat[0] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30;
-        mat[1] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31;
-        mat[2] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32;
-        mat[3] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33;
-        mat[4] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30;
-        mat[5] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31;
-        mat[6] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32;
-        mat[7] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33;
-        mat[8] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30;
-        mat[9] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31;
-        mat[10] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32;
-        mat[11] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33;
-        mat[12] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30;
-        mat[13] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31;
-        mat[14] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32;
-        mat[15] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33;
         return this;
-    };
-
-    proto.multiplySIMD = function(mat4) {
-        var mat = new cc.math.Matrix4(this);
-        return cc.kmMat4MultiplySIMD(this, mat, mat4);
     };
 
     cc.getMat4MultiplyValue = function (pM1, pM2) {
@@ -636,9 +580,9 @@
         return mat;
     };
 
-    cc.getMat4MultiplyValue = function (pM1, pM2) {
-        var mat = new cc.math.Matrix4();
-        return cc.multiplySIMD(mat, pM1, pM2);
+    cc.getMat4MultiplyValueSIMD = function (pM1, pM2) {
+        var mat = new cc.math.Matrix4(pM1);
+        return mat.multiplySIMD(pM2);
     };
 
     /**
@@ -681,15 +625,7 @@
             return pOut;
         }
 
-        var outArr = pOut.mat;
-        var inArr = pIn.mat;
-        
-        SIMD.float32x4.store(outArr, 0, SIMD.float32x4.load(inArr, 0));
-        SIMD.float32x4.store(outArr, 4, SIMD.float32x4.load(inArr, 4));
-        SIMD.float32x4.store(outArr, 8, SIMD.float32x4.load(inArr, 8));
-        SIMD.float32x4.store(outArr, 12, SIMD.float32x4.load(inArr, 12));
-        
-        return pOut;
+        return pOut.assignFromSIMD(pIn);
     };
 
     /**
@@ -727,7 +663,20 @@
     };
 
     proto.assignFromSIMD = function (mat4) {
-        return cc.kmMat4AssignSIMD(this, mat4);
+        if(this == mat4) {
+            cc.log("cc.mat.Matrix4.assignFrom(): mat4 equals current matrix");//TODO: ADD SIMD?
+            return this;
+        }
+
+        var outArr = this.mat;
+        var inArr = mat4.mat;
+        
+        SIMD.float32x4.store(outArr, 0, SIMD.float32x4.load(inArr, 0));
+        SIMD.float32x4.store(outArr, 4, SIMD.float32x4.load(inArr, 4));
+        SIMD.float32x4.store(outArr, 8, SIMD.float32x4.load(inArr, 8));
+        SIMD.float32x4.store(outArr, 12, SIMD.float32x4.load(inArr, 12));
+        
+        return this;
     };
 
     /**
@@ -1185,11 +1134,48 @@
     };
 
     cc.kmMat4LookAtSIMD = function (pOut, pEye, pCenter, pUp) {
-        var out = pOut.mat;
+        return pOut.lookAtSIMD(pEye, pCenter, pUp);
+    };
 
-        var center = SIMD.float32x4.load(pCenter.data, 0);
-        var eye = SIMD.float32x4.load(pEye.data, 0);
-        var up = SIMD.float32x4.load(pUp.data, 0);
+    var tempMatrix = new cc.math.Matrix4();         // an internal matrix
+    proto.lookAt = function(eyeVec, centerVec, upVec) {
+        var f = new cc.math.Vec3(centerVec), up = new cc.math.Vec3(upVec), mat = this.mat;
+        f.subtract(eyeVec);
+        f.normalize();
+        up.normalize();
+
+        var s = new cc.math.Vec3(f);
+        s.cross(up);
+        s.normalize();
+
+        var u = new cc.math.Vec3(s);
+        u.cross(f);
+        s.normalize();
+
+        this.identity();
+        mat[0] = s.x;
+        mat[4] = s.y;
+        mat[8] = s.z;
+
+        mat[1] = u.x;
+        mat[5] = u.y;
+        mat[9] = u.z;
+
+        mat[2] = -f.x;
+        mat[6] = -f.y;
+        mat[10] = -f.z;
+
+        tempMatrix = cc.math.Matrix4.createByTranslation(-eyeVec.x, -eyeVec.y, -eyeVec.z, tempMatrix);
+        this.multiply(tempMatrix);
+        return this;
+    };
+
+    proto.lookAtSIMD = function(eyeVec, centerVec, upVec) {
+        var out = this.mat;
+
+        var center = SIMD.float32x4.load(centerVec.data, 0);
+        var eye = SIMD.float32x4.load(eyeVec.data, 0);
+        var up = SIMD.float32x4.load(upVec.data, 0);
 
         // cc.kmVec3Subtract(f, pCenter, pEye);
         var f = SIMD.float32x4.sub(center, eye);
@@ -1282,44 +1268,7 @@
                     SIMD.float32x4.add(
                         SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 2, 2, 2, 2), a2),
                         SIMD.float32x4.mul(SIMD.float32x4.swizzle(b3, 3, 3, 3, 3), a3)))));
-        return pOut;
-    };
-
-    var tempMatrix = new cc.math.Matrix4();         // an internal matrix
-    proto.lookAt = function(eyeVec, centerVec, upVec) {
-        var f = new cc.math.Vec3(centerVec), up = new cc.math.Vec3(upVec), mat = this.mat;
-        f.subtract(eyeVec);
-        f.normalize();
-        up.normalize();
-
-        var s = new cc.math.Vec3(f);
-        s.cross(up);
-        s.normalize();
-
-        var u = new cc.math.Vec3(s);
-        u.cross(f);
-        s.normalize();
-
-        this.identity();
-        mat[0] = s.x;
-        mat[4] = s.y;
-        mat[8] = s.z;
-
-        mat[1] = u.x;
-        mat[5] = u.y;
-        mat[9] = u.z;
-
-        mat[2] = -f.x;
-        mat[6] = -f.y;
-        mat[10] = -f.z;
-
-        tempMatrix = cc.math.Matrix4.createByTranslation(-eyeVec.x, -eyeVec.y, -eyeVec.z, tempMatrix);
-        this.multiply(tempMatrix);
         return this;
-    };
-
-    proto.lookAtSIMD = function(pEye, pCenter, pUp) {
-        return cc.kmMat4LookAtSIMD(pEye, pCenter, pUp);
     };
 
     /**
