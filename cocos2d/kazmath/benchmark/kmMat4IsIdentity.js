@@ -52,7 +52,7 @@
 
   function nonSimd(n) {
     for (var i = 0; i < n; i++) {
-      isIdentitySIMD = T1.isIdentity();
+      isIdentity = T1.isIdentity();
     }
   }
 
