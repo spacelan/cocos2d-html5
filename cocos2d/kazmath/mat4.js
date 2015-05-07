@@ -1420,6 +1420,17 @@
         var temp = cc.math.Quaternion.rotationMatrix(rotation);
         return temp.toAxisAndAngle();
     };
+
+    if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true) {
+        proto.inverse = proto.inverseSIMD;
+        proto.isIdentity = proto.isIdentitySIMD;
+        proto.transpose = proto.transposeSIMD;
+        proto.multiply = proto.multiplySIMD;
+        proto.getMat4MultiplyValue = proto.getMat4MultiplyValueSIMD
+        proto.assignFrom = proto.assignFromSIMD;
+        proto.equals = proto.equalsSIMD;
+        proto.lookAt = proto.lookAtSIMD;
+    }
 })(cc);
 
 
