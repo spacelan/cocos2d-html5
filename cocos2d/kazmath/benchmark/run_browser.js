@@ -52,6 +52,11 @@ var speedupData ={
 };
 
 window.onload = function() {
+  if (typeof(SIMD) === 'undefined') {
+    var head = document.getElementById('head');
+    head.innerHTML = 'SIMD is not implemented in your browser, stops.';
+    return;
+  }
   console.log('Running benchmarks.');
   benchmarks.runAll({notifyResult: printResult,
                      notifyError:  printError,
