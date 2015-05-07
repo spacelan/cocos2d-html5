@@ -243,6 +243,10 @@
         tyArr[2] = this.z;
         return tyArr;
     };
+
+    if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true) {
+        proto.transformCoord = proto.transformCoordSIMD;
+    }
 })(cc);
 
 
