@@ -29,19 +29,59 @@
 (function(cc) {
     cc.math.Vec4 = function (x, y, z, w) {
         if (x && y === undefined) {
-            this.x = x.x;
-            this.y = x.y;
-            this.z = x.z;
-            this.w = x.w;
+            this.data = new Float32Array([x.x, x.y, x.z, x.w]);
         } else {
-            this.x = x || 0;
-            this.y = y || 0;
-            this.z = z || 0;
-            this.w = w || 0;
+            x = x || 0;
+            y = y || 0;
+            z = z || 0;
+            w = w || 0;
+            this.data = new Float32Array([x, y, z, w]);
         }
     };
+
+    /*cc.math.Vec4SIMD = function(x, y, z, w) {
+        this.data = new Float32Array([x, y, z, w]);
+    };*/
+
     cc.kmVec4 = cc.math.Vec4;
+    //cc.kmVec4SIMD = cc.math.Vec4SIMD;
     var proto = cc.math.Vec4.prototype;
+
+    Object.defineProperty(proto, 'x', {
+        get: function() {
+            return this.data[0];
+        },
+        set: function(value) {
+            this.data[0] = value;
+        }
+    });
+
+    Object.defineProperty(proto, 'y', {
+        get: function() {
+            return this.data[1];
+        },
+        set: function(value) {
+            this.data[1] = value;
+        }
+    });
+
+    Object.defineProperty(proto, 'z', {
+        get: function() {
+            return this.data[2];
+        },
+        set: function(value) {
+            this.data[2] = value;
+        }
+    });
+
+    Object.defineProperty(proto, 'w', {
+        get: function() {
+            return this.data[3];
+        },
+        set: function(value) {
+            this.data[3] = value;
+        }
+    });
 
     proto.fill = function (x, y, z, w) {     //=cc.kmVec4Fill
         if (x && y === undefined) {

@@ -28,22 +28,57 @@
 
 (function(cc) {
     cc.kmVec3 = cc.math.Vec3 = function (x, y, z) {
-        if(x && y === undefined){
-            this.x = x.x;
-            this.y = x.y;
-            this.z = x.z;
+        if (x && y === undefined) {
+            this.data = new Float32Array([x.x, x.y, x.z, 0.0]);
         } else {
-            this.x = x || 0;
-            this.y = y || 0;
-            this.z = z || 0;
+            x = x || 0;
+            y = y || 0;
+            z = z || 0;
+            this.data = new Float32Array([x, y, z, 0.0]);
         }
     };
+
+    /*cc.kmVec3SIMD = cc.math.Vec3SIMD = function(x, y, z) {
+        this.data = new Float32Array([x, y, z, 0.0]);
+    };*/
 
     cc.math.vec3 = function(x, y, z){
         return new cc.math.Vec3(x, y, z);
     };
 
+    /*cc.math.vec3SIMD = function(x, y, z) {
+        return new cc.math.Vec3SIMD(x, y, z);
+    };*/
+
     var proto = cc.math.Vec3.prototype;
+    //cc.math.Vec3SIMD.prototype = new cc.math.Vec3();
+
+    Object.defineProperty(proto, 'x', {
+        get: function() {
+            return this.data[0];
+        },
+        set: function(value) {
+            this.data[0] = value;
+        }
+    });
+
+    Object.defineProperty(proto, 'y', {
+        get: function() {
+            return this.data[1];
+        },
+        set: function(value) {
+            this.data[1] = value;
+        }
+    });
+
+    Object.defineProperty(proto, 'z', {
+        get: function() {
+            return this.data[2];
+        },
+        set: function(value) {
+            this.data[2] = value;
+        }
+    });
 
     proto.fill = function (x, y, z) {    // =cc.kmVec3Fill
         if (x && y === undefined) {
@@ -63,7 +98,7 @@
     };
 
     proto.lengthSq = function () {   //=cc.kmVec3LengthSq
-        return cc.math.square(this.x) + cc.math.square(this.y) + cc.math.square(this.z)
+        return cc.math.square(this.x) + cc.math.square(this.y) + cc.math.square(this.z);
     };
 
     proto.normalize = function () {  //= cc.kmVec3Normalize
@@ -136,6 +171,26 @@
         return this;
     };
 
+    proto.transformCoordSIMD = function(mat4){
+        var vec = SIMD.float32x4.load(this.data, 0);
+        var mat0 = SIMD.float32x4.load(mat4.mat, 0);
+        var mat1 = SIMD.float32x4.load(mat4.mat, 4);
+        var mat2 = SIMD.float32x4.load(mat4.mat, 8);
+        var mat3 = SIMD.float32x4.load(mat4.mat, 12);
+
+        //cc.kmVec4Transform(v, inV,pM);
+        var out = SIMD.float32x4.add(
+            SIMD.float32x4.add(SIMD.float32x4.mul(mat0, SIMD.float32x4.swizzle(vec, 0, 0, 0, 0)),
+                               SIMD.float32x4.mul(mat1, SIMD.float32x4.swizzle(vec, 1, 1, 1, 1))),
+            SIMD.float32x4.add(SIMD.float32x4.mul(mat2, SIMD.float32x4.swizzle(vec, 2, 2, 2, 2)),
+                               mat3));
+
+        out = SIMD.float32x4.div(out, SIMD.float32x4.swizzle(out, 3, 3, 3, 3));
+        SIMD.float32x4.store(this.data, 0, out);
+
+        return this;
+    };
+
     proto.scale = function(scale){             // = cc.kmVec3Scale
         this.x *= scale;
         this.y *= scale;
@@ -188,6 +243,10 @@
         tyArr[2] = this.z;
         return tyArr;
     };
+
+    if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true) {
+        proto.transformCoord = proto.transformCoordSIMD;
+    }
 })(cc);
 
 
