@@ -77,4 +77,4 @@ window.onload = function() {
     responsive: true
   });
   console.log('Benchmarks completed.');
-}
+};

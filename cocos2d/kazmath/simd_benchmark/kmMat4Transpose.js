@@ -57,7 +57,6 @@
     //printMatrix(T2.mat);
     simd(1);
     //printMatrix(T2x4.mat);
-    return true;
     return equals(T1.mat, T1x4.mat) && equals(T2.mat, T2x4.mat);
     
   }

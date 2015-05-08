@@ -98,7 +98,7 @@
     };
 
     proto.lengthSq = function () {   //=cc.kmVec3LengthSq
-        return cc.math.square(this.x) + cc.math.square(this.y) + cc.math.square(this.z)
+        return cc.math.square(this.x) + cc.math.square(this.y) + cc.math.square(this.z);
     };
 
     proto.normalize = function () {  //= cc.kmVec3Normalize
