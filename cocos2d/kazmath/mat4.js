@@ -701,7 +701,7 @@
         if(this === mat4){
             cc.log("cc.kmMat4AreEqual(): pMat1 and pMat2 are same object.");
             return true;
-        };
+        }
         var m10 = SIMD.float32x4.load(this.mat, 0);
         var m20 = SIMD.float32x4.load(mat4.mat, 0);
         
@@ -729,7 +729,7 @@
         if (ret.signMask === 0)
             return false;
         return true;
-    }
+    };
 
     /**
      * Builds an X-axis rotation matrix and stores it in matrix, returns matrix, if matrix is null, create a new matrix
@@ -1426,7 +1426,7 @@
         proto.isIdentity = proto.isIdentitySIMD;
         proto.transpose = proto.transposeSIMD;
         proto.multiply = proto.multiplySIMD;
-        proto.getMat4MultiplyValue = proto.getMat4MultiplyValueSIMD
+        proto.getMat4MultiplyValue = proto.getMat4MultiplyValueSIMD;
         proto.assignFrom = proto.assignFromSIMD;
         proto.equals = proto.equalsSIMD;
         proto.lookAt = proto.lookAtSIMD;

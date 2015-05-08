@@ -46,7 +46,7 @@
     for (var r = 0; r < 4; ++r) {
       for (var c = 0; c < 4; ++c) {
         var ri = 4*r;
-        dst[ri + c] = op1[ri]*op2[c] + op1[ri+1]*op2[c+4] + op1[ri+2]*op2[c+8] + op1[ri+3]*op2[c+12]
+        dst[ri + c] = op1[ri]*op2[c] + op1[ri+1]*op2[c+4] + op1[ri+2]*op2[c+8] + op1[ri+3]*op2[c+12];
       }
     }
   }
