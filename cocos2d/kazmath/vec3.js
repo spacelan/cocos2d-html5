@@ -151,7 +151,7 @@
                                mat3));
 
         out = SIMD.float32x4.div(out, SIMD.float32x4.swizzle(out, 3, 3, 3, 3));
-        this.fill(out.x, out.y, out.z);
+        this.fill(out);
 
         return this;
     };
