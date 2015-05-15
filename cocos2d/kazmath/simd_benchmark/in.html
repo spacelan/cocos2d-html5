@@ -7,7 +7,7 @@
 <script>
 var cc = {};
 cc.doNotUseSIMD = false;
-if(typeof(SIMD) !== 'undefined') alert('SIMD');
+if(typeof(SIMD) !== 'undefined') alert(SIMD.float32x4);
 if(cc.doNotUseSIMD !== true) alert('!true');
 if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true) alert('OK');
 </script>
