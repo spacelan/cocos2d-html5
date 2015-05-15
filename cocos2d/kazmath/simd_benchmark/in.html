@@ -2,15 +2,14 @@
 <html>
 <body>
 ----------
-<p id="p">NO SIMD</p>
+<p id="p">SIMD TEST</p>
 ----------
 <script>
 var cc = {};
 cc.doNotUseSIMD = false;
 if(typeof(SIMD) !== 'undefined') alert('SIMD');
 if(cc.doNotUseSIMD !== true) alert('!true');
-if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true)
-  document.getElementById('p').innerText = typeof(SIMD);
+if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true) alert('OK');
 </script>
 
 </body>
