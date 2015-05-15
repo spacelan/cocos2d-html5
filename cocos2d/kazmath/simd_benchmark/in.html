@@ -5,8 +5,10 @@
 <p id="p">NO SIMD</p>
 ----------
 <script>
-if(typeof(SIMD) !== 'undefined' )
-  document.getElementById('p').innerText = 'SIMD';
+var cc = {};
+cc.doNotUseSIMD = false;
+if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true)
+  document.getElementById('p').innerText = typeof(SIMD);
 </script>
 
 </body>
