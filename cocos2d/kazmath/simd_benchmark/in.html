@@ -7,6 +7,8 @@
 <script>
 var cc = {};
 cc.doNotUseSIMD = false;
+if(typeof(SIMD) !== 'undefined') alert('SIMD');
+if(cc.doNotUseSIMD !== true) alert('!true');
 if(typeof(SIMD) !== 'undefined' && cc.doNotUseSIMD !== true)
   document.getElementById('p').innerText = typeof(SIMD);
 </script>
