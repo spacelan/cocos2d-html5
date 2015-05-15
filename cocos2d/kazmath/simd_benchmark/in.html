@@ -2,10 +2,11 @@
 <html>
 <body>
 ----------
-<p id="p"></p>
+<p id="p">NO SIMD</p>
 ----------
 <script>
-document.getElementById('p').innerText = typeof(SIMD);
+if(typeof(SIMD) !== 'undefined' )
+  document.getElementById('p').innerText = 'SIMD';
 </script>
 
 </body>
